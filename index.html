@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dev Daily Log</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #1c2128;
+      --border: rgba(255,255,255,0.08);
+      --border-hover: rgba(255,255,255,0.15);
+      --text: #e6edf3;
+      --text-muted: #7d8590;
+      --text-dim: #3d444d;
+      --green: #3fb950;
+      --green-dim: #1a3a20;
+      --purple: #bc8cff;
+      --purple-dim: #2a1f3d;
+      --amber: #e3b341;
+      --amber-dim: #3a2a0a;
+      --blue: #58a6ff;
+      --blue-dim: #0d2340;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Inter', sans-serif;
+      --radius: 6px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    /* ── layout ── */
+    .shell {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    /* ── header ── */
+    .header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 40px;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .brand-name {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--green);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .brand-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .stats {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 2px;
+    }
+
+    .stat-num {
+      font-family: var(--mono);
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .stat-divider {
+      width: 1px;
+      height: 32px;
+      background: var(--border);
+    }
+
+    /* ── heatmap ── */
+    .heatmap-wrap {
+      margin-bottom: 32px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .heatmap-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 10px;
+    }
+
+    .heatmap {
+      display: flex;
+      gap: 3px;
+    }
+
+    .heatmap-col {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .heatmap-cell {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+      transition: transform 0.1s;
+      cursor: default;
+    }
+
+    .heatmap-cell[data-count="1"] { background: #1a3a20; border-color: #2a5530; }
+    .heatmap-cell[data-count="2"] { background: #1f5c27; border-color: #2e7035; }
+    .heatmap-cell[data-count="3"] { background: #2ea043; border-color: #3fb950; }
+    .heatmap-cell[data-count="4"] { background: #3fb950; border-color: #56d364; }
+
+    .heatmap-cell:hover { transform: scale(1.3); z-index: 1; }
+
+    /* ── add entry ── */
+    .add-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 32px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .entry-input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 9px 12px;
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .entry-input::placeholder { color: var(--text-dim); }
+    .entry-input:focus { border-color: var(--border-hover); }
+
+    .log-btn {
+      background: #238636;
+      border: 1px solid #2ea043;
+      border-radius: var(--radius);
+      color: #fff;
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 9px 16px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+
+    .log-btn:hover { background: #2ea043; }
+    .log-btn:active { transform: scale(0.98); }
+
+    .tag-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .tag-pill {
+      font-size: 12px;
+      font-family: var(--mono);
+      padding: 4px 10px;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.1s;
+    }
+
+    .tag-pill:hover { border-color: var(--border-hover); color: var(--text); }
+    .tag-pill.active[data-tag="learn"] { background: var(--purple-dim); border-color: var(--purple); color: var(--purple); }
+    .tag-pill.active[data-tag="build"] { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+    .tag-pill.active[data-tag="fix"]   { background: var(--amber-dim); border-color: var(--amber); color: var(--amber); }
+    .tag-pill.active[data-tag="read"]  { background: var(--blue-dim); border-color: var(--blue); color: var(--blue); }
+
+    .char-count {
+      font-size: 11px;
+      color: var(--text-dim);
+      text-align: right;
+      margin-top: 6px;
+      font-family: var(--mono);
+    }
+
+    /* ── timeline ── */
+    .section-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 12px;
+    }
+
+    .day-group { margin-bottom: 28px; }
+
+    .day-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .day-date {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .day-line {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .day-count {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .entry-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      position: relative;
+      transition: background 0.1s;
+    }
+
+    .entry-row:hover { background: var(--surface); }
+    .entry-row:hover .delete-btn { opacity: 1; }
+
+    .entry-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 5px;
+    }
+
+    .dot-learn { background: var(--purple); }
+    .dot-build { background: var(--green); }
+    .dot-fix   { background: var(--amber); }
+    .dot-read  { background: var(--blue); }
+
+    .entry-body { flex: 1; }
+
+    .entry-text {
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .entry-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 3px;
+    }
+
+    .entry-time {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .entry-badge {
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 1px 7px;
+      border-radius: 100px;
+    }
+
+    .badge-learn { background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(188,140,255,0.3); }
+    .badge-build { background: var(--green-dim); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
+    .badge-fix   { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(227,179,65,0.3); }
+    .badge-read  { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(88,166,255,0.3); }
+
+    .delete-btn {
+      opacity: 0;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 2px 4px;
+      border-radius: 3px;
+      transition: color 0.1s, opacity 0.1s;
+      flex-shrink: 0;
+    }
+
+    .delete-btn:hover { color: #f85149; }
+
+    /* ── empty state ── */
+    .empty-state {
+      text-align: center;
+      padding: 48px 0;
+      color: var(--text-muted);
+    }
+
+    .empty-state .empty-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+      color: var(--text-dim);
+    }
+
+    .empty-state p {
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .empty-state code {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--green);
+    }
+
+    /* ── footer ── */
+    .footer {
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-text {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .export-btn {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .export-btn:hover { border-color: var(--border-hover); color: var(--text); }
+
+    /* ── responsive ── */
+    @media (max-width: 480px) {
+      .shell { padding: 24px 16px 60px; }
+      .header { flex-direction: column; gap: 16px; }
+      .stats { align-self: flex-start; }
+      .heatmap-cell { width: 10px; height: 10px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <header class="header">
+    <div class="brand">
+      <div class="brand-name">dev/log</div>
+      <div class="brand-sub">what did you ship today?</div>
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-num" id="stat-streak">0</span>
+        <span class="stat-label">day streak</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <span class="stat-num" id="stat-total">0</span>
+        <span class="stat-label">entries</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <span class="stat-num" id="stat-days">0</span>
+        <span class="stat-label">days logged</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="heatmap-wrap">
+    <div class="heatmap-label">last 16 weeks</div>
+    <div class="heatmap" id="heatmap"></div>
+  </div>
+
+  <div class="add-panel">
+    <div class="input-row">
+      <input
+        class="entry-input"
+        id="entry-input"
+        type="text"
+        placeholder="Learned useCallback, built auth flow, fixed memory leak…"
+        maxlength="140"
+        autocomplete="off"
+        aria-label="New log entry"
+      />
+      <button class="log-btn" onclick="addEntry()" aria-label="Add entry">+ log it</button>
+    </div>
+    <div class="tag-row" role="group" aria-label="Entry type">
+      <button class="tag-pill active" data-tag="learn" onclick="selectTag(this)">learned</button>
+      <button class="tag-pill" data-tag="build" onclick="selectTag(this)">built</button>
+      <button class="tag-pill" data-tag="fix" onclick="selectTag(this)">fixed</button>
+      <button class="tag-pill" data-tag="read" onclick="selectTag(this)">read</button>
+    </div>
+    <div class="char-count" id="char-count">0 / 140</div>
+  </div>
+
+  <div class="section-label" id="timeline-label">recent entries</div>
+  <div id="timeline"></div>
+
+  <footer class="footer">
+    <span class="footer-text" id="footer-since">started today</span>
+    <button class="export-btn" onclick="exportJSON()">export .json</button>
+  </footer>
+
+</div>
+
+<script>
+  const STORAGE_KEY = 'devlog_entries_v1';
+  let entries = [];
+  let selectedTag = 'learn';
+
+  const TAGS = { learn: 'learned', build: 'built', fix: 'fixed', read: 'read' };
+
+  /* ── storage ── */
+  function load() {
+    try { entries = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch { entries = []; }
+  }
+
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  }
+
+  /* ── add / delete ── */
+  function addEntry() {
+    const input = document.getElementById('entry-input');
+    const text = input.value.trim();
+    if (!text) { input.focus(); return; }
+    entries.unshift({ id: Date.now(), text, tag: selectedTag, ts: new Date().toISOString() });
+    save();
+    input.value = '';
+    updateCharCount('');
+    render();
+  }
+
+  function deleteEntry(id) {
+    entries = entries.filter(e => e.id !== id);
+    save();
+    render();
+  }
+
+  function selectTag(btn) {
+    document.querySelectorAll('.tag-pill').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedTag = btn.dataset.tag;
+  }
+
+  function updateCharCount(val) {
+    const el = document.getElementById('char-count');
+    el.textContent = val.length + ' / 140';
+    el.style.color = val.length > 120 ? '#e3b341' : '';
+  }
+
+  /* ── stats ── */
+  function calcStreak(list) {
+    if (!list.length) return 0;
+    const days = [...new Set(list.map(e => toDateKey(new Date(e.ts))))].sort().reverse();
+    const todayKey = toDateKey(new Date());
+    let streak = 0;
+    let cursor = todayKey;
+    for (const day of days) {
+      if (day === cursor) { streak++; cursor = prevDay(cursor); }
+      else if (day < cursor) break;
+    }
+    return streak;
+  }
+
+  function toDateKey(d) {
+    return d.toISOString().slice(0, 10);
+  }
+
+  function prevDay(key) {
+    const d = new Date(key + 'T12:00:00Z');
+    d.setUTCDate(d.getUTCDate() - 1);
+    return toDateKey(d);
+  }
+
+  function uniqueDays(list) {
+    return new Set(list.map(e => toDateKey(new Date(e.ts)))).size;
+  }
+
+  /* ── heatmap ── */
+  function buildHeatmap(list) {
+    const map = {};
+    list.forEach(e => {
+      const k = toDateKey(new Date(e.ts));
+      map[k] = (map[k] || 0) + 1;
+    });
+
+    const today = new Date();
+    const dow = today.getDay();
+    const totalDays = 16 * 7;
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - (totalDays - 1) - dow);
+
+    const cols = [];
+    let col = [];
+    for (let i = 0; i < totalDays + dow; i++) {
+      const d = new Date(startDate);
+      d.setDate(startDate.getDate() + i);
+      const key = toDateKey(d);
+      const count = Math.min(map[key] || 0, 4);
+      const isFuture = d > today;
+      col.push({ key, count: isFuture ? -1 : count });
+      if (col.length === 7) { cols.push(col); col = []; }
+    }
+    if (col.length) cols.push(col);
+
+    const hm = document.getElementById('heatmap');
+    hm.innerHTML = '';
+    cols.forEach(column => {
+      const colEl = document.createElement('div');
+      colEl.className = 'heatmap-col';
+      column.forEach(({ key, count }) => {
+        const cell = document.createElement('div');
+        cell.className = 'heatmap-cell';
+        if (count > 0) cell.dataset.count = Math.min(count, 4);
+        if (count < 0) cell.style.opacity = '0.2';
+        cell.title = count > 0 ? key + ': ' + count + ' entr' + (count === 1 ? 'y' : 'ies') : key;
+        colEl.appendChild(cell);
+      });
+      hm.appendChild(colEl);
+    });
+  }
+
+  /* ── format ── */
+  function formatDay(dateStr) {
+    const d = new Date(dateStr + 'T12:00:00');
+    const today = new Date();
+    const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
+    if (toDateKey(d) === toDateKey(today)) return 'today';
+    if (toDateKey(d) === toDateKey(yesterday)) return 'yesterday';
+    return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+
+  function formatTime(iso) {
+    const d = new Date(iso);
+    return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function formatSince(list) {
+    if (!list.length) return 'started today';
+    const first = new Date(list[list.length - 1].ts);
+    const days = Math.round((Date.now() - first) / 86400000);
+    if (days === 0) return 'started today';
+    if (days === 1) return 'logging since yesterday';
+    return 'logging for ' + days + ' days';
+  }
+
+  /* ── render ── */
+  function render() {
+    buildHeatmap(entries);
+
+    document.getElementById('stat-streak').textContent = calcStreak(entries);
+    document.getElementById('stat-total').textContent = entries.length;
+    document.getElementById('stat-days').textContent = uniqueDays(entries);
+    document.getElementById('footer-since').textContent = formatSince(entries);
+
+    const label = document.getElementById('timeline-label');
+    label.textContent = entries.length ? 'recent entries' : '';
+
+    const timeline = document.getElementById('timeline');
+    if (!entries.length) {
+      timeline.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">▋</div>
+          <p>Nothing logged yet.<br>What did you <code>learn</code>, <code>build</code>, or <code>fix</code> today?</p>
+        </div>`;
+      return;
+    }
+
+    const groups = {};
+    entries.forEach(e => {
+      const k = toDateKey(new Date(e.ts));
+      if (!groups[k]) groups[k] = [];
+      groups[k].push(e);
+    });
+
+    timeline.innerHTML = Object.keys(groups).sort().reverse().map(day => `
+      <div class="day-group">
+        <div class="day-header">
+          <span class="day-date">${formatDay(day)}</span>
+          <div class="day-line"></div>
+          <span class="day-count">${groups[day].length}</span>
+        </div>
+        ${groups[day].map(e => `
+          <div class="entry-row">
+            <div class="entry-dot dot-${e.tag}"></div>
+            <div class="entry-body">
+              <div class="entry-text">${escHtml(e.text)}</div>
+              <div class="entry-meta">
+                <span class="entry-time">${formatTime(e.ts)}</span>
+                <span class="entry-badge badge-${e.tag}">${TAGS[e.tag]}</span>
+              </div>
+            </div>
+            <button class="delete-btn" onclick="deleteEntry(${e.id})" aria-label="Delete entry" title="Delete">×</button>
+          </div>
+        `).join('')}
+      </div>
+    `).join('');
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ── export ── */
+  function exportJSON() {
+    const blob = new Blob([JSON.stringify(entries, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'devlog-' + toDateKey(new Date()) + '.json';
+    a.click();
+  }
+
+  /* ── events ── */
+  document.getElementById('entry-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addEntry();
+  });
+
+  document.getElementById('entry-input').addEventListener('input', e => {
+    updateCharCount(e.target.value);
+  });
+
+  /* ── init ── */
+  load();
+  render();
+</script>
+</body>
+</html>
